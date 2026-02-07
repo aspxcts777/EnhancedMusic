@@ -1,4 +1,6 @@
-# 🎵 EnhancedMusic
+https://raw.githubusercontent.com/aspxcts777/EnhancedMusic/refs/heads/main/icon.png
+
+# EnhancedMusic
 
 **EnhancedMusic** is a simple desktop application that brings **YouTube** to your desktop with a dedicated, app-like experience.
 
