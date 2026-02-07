@@ -1,0 +1,71 @@
+{
+  "name": "enhanced-music",
+  "productName": "EnhancedMusic",
+  "version": "0.0.1-Alpha",
+  "description": "Enhanced Music Player with Advanced Features.",
+  "keywords": [
+    "Music",
+    "Player",
+    "Enhanced"
+  ],
+  "homepage": "https://github.com/aspxcts777/EnhancedMusic#readme",
+  "bugs": {
+    "url": "https://github.com/aspxcts777/EnhancedMusic/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aspxcts777/EnhancedMusic.git"
+  },
+  "license": "MIT",
+  "author": "Aspxcts777",
+  "type": "commonjs",
+  "main": "app.js",
+  "devDependencies": {
+    "electron": "^39.2.7",
+    "electron-builder": "^26.4.0"
+  },
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "dist:mac-intel": "electron-builder --mac --x64",
+    "dist:mac-universal": "electron-builder --mac --universal",
+    "dist:linux": "electron-builder --linux",
+    "dist:all": "electron-builder -mwl",
+    "generate-notes": "node scripts/generate-notes.js"
+  },
+  "build": {
+    "appId": "com.aspxcts.enhancedmusic",
+    "productName": "EnhancedMusic",
+    "mac": {
+      "target": "dmg",
+      "icon": "icon.icns",
+      "category": "public.app-category.entertainment"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "icon.png",
+      "category": "AudioVideo",
+      "maintainer": "Aspxcts777"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "EnhancedMusic"
+    },
+    "publish": {
+      "provider": "github",
+      "releaseType": "release"
+    },
+    "releaseInfo": {
+      "releaseNotesFile": "release-notes.md"
+    }
+  }
+}

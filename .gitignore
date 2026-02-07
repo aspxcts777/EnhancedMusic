@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Build Outputs (Where electron-builder saves the .exe/.dmg)
+dist/
+release/
+build/
+
+# Generated Release Notes (Since the bot generates this every time)
+release-notes.md
+
+# Environment Variables (If you use .env locally)
+.env
+
+# Mac System Files
+.DS_Store
+
+# Windows System Files
+Thumbs.db

@@ -1,0 +1,153 @@
+<!-- 1.2.1 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>About</title>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --text-color: #ffffff;
+            --accent: #6200ff; 
+            /* Added these variables to match Options tab style */
+            --input-height: 40px;
+            --border-radius: 8px;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            height: 100vh; text-align: center; user-select: none;
+            overflow: hidden; /* Prevents scrollbars */
+        }
+
+        h1 {
+            font-size: 24px; margin: 0 0 10px 0;
+            background-clip: text; -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-image: linear-gradient(135deg, #ea00ff, #6200ff);
+        }
+
+        .version { font-size: 14px; opacity: 0.8; margin-bottom: 30px; font-family: monospace; }
+        .credits { font-size: 13px; opacity: 0.9; margin-bottom: 20px; }
+        
+        a { color: var(--accent); text-decoration: none; font-weight: bold; cursor: pointer; }
+        a:hover { text-decoration: underline; }
+
+        .heart { color: #ff4d4d; display: inline-block; animation: beat 1s infinite alternate; }
+        @keyframes beat { to { transform: scale(1.2); } }
+        
+        /* --- BUTTON STYLING (Matches Options) --- */
+        .actions {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            padding: 0 50px; /* Adds side padding to center it nicely */
+            box-sizing: border-box;
+            margin-top: 10px;
+        }
+
+        .action-btn {
+            flex: 1;
+            height: var(--input-height);
+            border: 2px solid var(--accent);
+            border-radius: var(--border-radius);
+            background: transparent;
+            color: var(--text-color);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+
+        .action-btn:hover {
+            background: #6200ff;
+            color: #000000; 
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .action-btn:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="logo">
+        <img src="icon.png" alt="EnhancedMusic Logo" style="width: 80px; height: 80px; margin-bottom: 20px;">
+    </div>
+
+    <h1>EnhancedMusic</h1>
+    <div class="version">0.0.1-Alpha</div>
+
+    <div class="credits">
+        Created with <span class="heart">❤</span> by Aspxcts777<br>
+        <a id="githubLink">github.com/aspxcts777/EnhancedMusic</a>
+    </div>
+
+    <div class="actions">
+        <button class="action-btn" id="okayBtn">OK</button>
+    </div>
+
+    <div id="mac-controls" style="display: none; width: 100%; padding: 0 50px; box-sizing: border-box; margin-top: 10px;">
+        <button class="action-btn" id="close-btn">Close</button>
+    </div>
+
+    <script>
+        const { ipcRenderer, shell } = require('electron');
+        // 'os' is required for the Mac check
+        const os = require('os'); 
+
+        const root = document.documentElement;
+        
+        async function init() {
+            try {
+                const cfg = ipcRenderer.sendSync('get-config');
+                if (cfg) {
+                    let color = cfg.text_color || "#ff0000";
+                    
+                    // --- SYNC LOGIC ---
+                    if (cfg.sync_theme) {
+                        try {
+                            const sysColor = await ipcRenderer.invoke('get-system-accent');
+                            if (sysColor) color = sysColor;
+                        } catch (e) { console.log("Sync error", e); }
+                    }
+
+                    if (cfg.theme_mode === 'light') {
+                        root.style.setProperty('--bg-color', '#ffffff');
+                        root.style.setProperty('--text-color', '#000000');
+                    } else if (cfg.theme_mode === 'system') {
+                         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+                            root.style.setProperty('--bg-color', '#ffffff');
+                            root.style.setProperty('--text-color', '#000000');
+                         }
+                    }
+                }
+            } catch(e) {}
+        }
+        
+        init();
+
+        // 1. Handle Mac-Specific Button
+        if (os.platform() === 'darwin') {
+            document.getElementById('mac-controls').style.display = 'block';
+            // Hide the standard OK button on Mac if you prefer, or keep both
+            document.querySelector('.actions').style.display = 'none'; 
+            
+            document.getElementById('close-btn').onclick = () => window.close();
+        }
+
+        // 2. Handle Links
+        document.getElementById('githubLink').addEventListener('click', () => {
+            shell.openExternal('https://github.com/aspxcts777/EnhancedTube');
+        });
+
+        // 3. Handle OK Button (Fixed ID)
+        document.getElementById('okayBtn').addEventListener('click', () => window.close());
+    </script>
+</body>
+</html>

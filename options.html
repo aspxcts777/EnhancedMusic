@@ -1,0 +1,168 @@
+<!-- 1.2.1 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Options</title>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --text-color: #ffffff;
+            --input-bg: #111;
+            --border-color: #333;
+            --accent: #ff0000;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0; padding: 25px;
+            user-select: none; display: flex; flex-direction: column;
+            height: 100vh; box-sizing: border-box; overflow: hidden;
+        }
+
+        .header { 
+            display: flex; align-items: center; gap: 10px; 
+            margin-bottom: 20px; padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .header-icon { color: var(--accent); font-size: 20px; }
+        h2 { margin: 0; font-size: 18px; font-weight: 600; color: var(--accent); }
+
+        .scroll-area { flex-grow: 1; overflow-y: auto; padding-right: 10px; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+        .section-title {
+            font-size: 14px; font-weight: bold; color: var(--accent);
+            margin-top: 15px; margin-bottom: 10px; text-transform: uppercase;
+        }
+
+        .checkbox-wrapper { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; cursor: pointer; }
+        .checkbox-wrapper input { display: none; }
+        .checkmark {
+            width: 18px; height: 18px; 
+            border: 2px solid var(--border-color); border-radius: 4px; background: var(--input-bg);
+            display: flex; align-items: center; justify-content: center; 
+        }
+        .checkbox-wrapper:hover .checkmark { border-color: #888; }
+        .checkbox-wrapper input:checked + .checkmark { 
+            background-color: var(--accent); border-color: var(--accent); 
+        }
+        .checkmark::after { content: "✔"; color: #000; font-size: 12px; display: none; }
+        .checkbox-wrapper input:checked + .checkmark::after { display: block; }
+        .label-text { font-size: 14px; opacity: 0.9; }
+
+        .actions { display: flex; gap: 15px; margin-top: 20px; }
+        .action-btn {
+            flex: 1; padding: 10px; border: 2px solid var(--accent);
+            border-radius: 8px; background: transparent; color: var(--text-color);
+            font-weight: 600; cursor: pointer; transition: 0.2s;
+        }
+        .action-btn:hover { background: var(--accent); color: #000; }
+        
+        .restart-hint { font-size: 11px; opacity: 0.5; float: right; margin-top: 4px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <span class="header-icon">⚙</span>
+        <h2>Options</h2>
+    </div>
+
+    <div class="scroll-area">
+        <div class="section-title">General</div>
+        <label class="checkbox-wrapper"><input type="checkbox" id="alwaysOnTop"><span class="checkmark"></span><span class="label-text">Keep window always on top</span></label>
+        <label class="checkbox-wrapper"><input type="checkbox" id="startOnBoot"><span class="checkmark"></span><span class="label-text">Start YouTubeMusic on system boot</span></label>
+        <label class="checkbox-wrapper"><input type="checkbox" id="enableAdBlock"><span class="checkmark"></span><span class="label-text">Enable AdBlocker</span></label>
+        <label class="checkbox-wrapper"><input type="checkbox" id="show_splash"><span class="checkmark"></span><span class="label-text">Enable Splash on Startup</span></label>
+
+        <div class="section-title">Advanced Rendering <span class="restart-hint">(Restart Required)</span></div>
+        <label class="checkbox-wrapper"><input type="checkbox" id="gpuRaster"><span class="checkmark"></span><span class="label-text">Enable GPU Rasterization</span></label>
+        <label class="checkbox-wrapper"><input type="checkbox" id="ignoreBlocklist"><span class="checkmark"></span><span class="label-text">Ignore GPU Blocklist</span></label>
+        <label class="checkbox-wrapper"><input type="checkbox" id="quic"><span class="checkmark"></span><span class="label-text">Enable QUIC Protocol</span></label>
+    </div>
+
+    <div class="actions">
+        <button class="action-btn" id="saveBtn">Save</button>
+        <button class="action-btn" id="cancelBtn">Cancel</button>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        const root = document.documentElement;
+
+        async function init() {
+            try {
+                const cfg = ipcRenderer.sendSync('get-config');
+                if (cfg) {
+                    let color = cfg.text_color || "#ff0000";
+                    
+                    // --- SYNC LOGIC ---
+                    if (cfg.sync_theme) {
+                        try {
+                            const sysColor = await ipcRenderer.invoke('get-system-accent');
+                            if (sysColor) color = sysColor;
+                        } catch (e) { console.log("Sync error", e); }
+                    }
+                    root.style.setProperty('--accent', color);
+
+                    if (cfg.theme_mode === 'light') {
+                        root.style.setProperty('--bg-color', '#ffffff');
+                        root.style.setProperty('--text-color', '#000000');
+                        root.style.setProperty('--input-bg', '#f5f5f5');
+                        root.style.setProperty('--border-color', '#ccc');
+                    } else if (cfg.theme_mode === 'system') {
+                         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+                            root.style.setProperty('--bg-color', '#ffffff');
+                            root.style.setProperty('--text-color', '#000000');
+                            root.style.setProperty('--input-bg', '#f5f5f5');
+                            root.style.setProperty('--border-color', '#ccc');
+                         }
+                    }
+                    
+                    document.getElementById('replaceShorts').checked = cfg.replace_shorts || false;
+                    document.getElementById('alwaysOnTop').checked = cfg.always_on_top || false;
+                    document.getElementById('startOnBoot').checked = cfg.start_on_boot || false;
+                    document.getElementById('enableAdBlock').checked = cfg.enable_adblock !== false;
+                    document.getElementById('show_splash').checked = cfg.show_splash !== false;
+
+                    document.getElementById('av1').checked = cfg.use_av1 || false;
+                    document.getElementById('skia').checked = cfg.UseSkiaRenderer || false;
+                    document.getElementById('vaapi').checked = cfg.use_vaapi || false;
+                    document.getElementById('angle').checked = cfg.force_angle_d3d11 || false;
+                    document.getElementById('gpuRaster').checked = cfg.enable_gpu || false;
+                    document.getElementById('zeroCopy').checked = cfg.enable_zero_copy || false;
+                    document.getElementById('ignoreBlocklist').checked = cfg.ignore_gpu_blocklist || false;
+                    document.getElementById('quic').checked = cfg.enable_quic || false;
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        init(); 
+
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            const newCfg = {
+                replace_shorts: document.getElementById('replaceShorts').checked,
+                always_on_top: document.getElementById('alwaysOnTop').checked,
+                start_on_boot: document.getElementById('startOnBoot').checked,
+                enable_adblock: document.getElementById('enableAdBlock').checked,
+                show_splash: document.getElementById('show_splash').checked,
+                use_av1: document.getElementById('av1').checked,
+                UseSkiaRenderer: document.getElementById('skia').checked,
+                use_vaapi: document.getElementById('vaapi').checked,
+                force_angle_d3d11: document.getElementById('angle').checked,
+                enable_gpu: document.getElementById('gpuRaster').checked,
+                enable_zero_copy: document.getElementById('zeroCopy').checked,
+                ignore_gpu_blocklist: document.getElementById('ignoreBlocklist').checked,
+                enable_quic: document.getElementById('quic').checked
+            };
+            ipcRenderer.send('save-appearance', newCfg);
+            window.close();
+        });
+        document.getElementById('cancelBtn').addEventListener('click', () => window.close());
+    </script>
+</body>
+</html>

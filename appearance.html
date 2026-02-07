@@ -1,0 +1,292 @@
+<!-- 1.2.1 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Appearance</title>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --text-color: #ffffff;
+            --input-bg: #111;
+            --border-color: #333;
+            --accent: #ff0000;
+            --border-radius: 8px;
+            --input-height: 40px;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0; padding: 25px;
+            user-select: none; overflow: hidden;
+            display: flex; flex-direction: column;
+            height: 100vh; box-sizing: border-box;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .header { 
+            display: flex; align-items: center; gap: 12px; 
+            margin-bottom: 20px; padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .header-icon { color: var(--accent); font-size: 20px; }
+        h2 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: 0.5px; }
+
+        .form-container { display: flex; flex-direction: column; gap: 18px; flex-grow: 1; }
+
+        .checkbox-wrapper { display: flex; align-items: center; gap: 12px; cursor: pointer; width: fit-content; }
+        .checkbox-wrapper input { display: none; }
+        .checkmark {
+            width: 20px; height: 20px; 
+            border: 2px solid var(--border-color);
+            border-radius: 6px; background: var(--input-bg);
+            display: flex; align-items: center; justify-content: center; 
+            transition: 0.2s; flex-shrink: 0; 
+        }
+        .checkbox-wrapper:hover .checkmark { border-color: #888; }
+        .checkbox-wrapper input:checked + .checkmark { 
+            background-color: var(--accent); border-color: var(--accent); 
+        }
+        .checkmark::after { content: "✔"; color: #000; font-size: 14px; font-weight: bold; display: none; }
+        .checkbox-wrapper input:checked + .checkmark::after { display: block; }
+        .label-text { font-size: 14px; opacity: 0.9; }
+
+        .input-group { display: flex; flex-direction: column; gap: 8px; }
+        .input-label { font-size: 12px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+
+        .custom-select-wrapper { position: relative; width: 100%; z-index: 100; }
+        .custom-select-trigger {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 15px; width: 100%; height: var(--input-height);
+            background: var(--input-bg); border: 2px solid var(--border-color);
+            border-radius: var(--border-radius); color: var(--text-color);
+            font-size: 14px; cursor: pointer; transition: 0.2s; box-sizing: border-box;
+        }
+        .custom-select-trigger::after { content: "▼"; font-size: 10px; opacity: 0.6; }
+        .custom-select-wrapper.open .custom-select-trigger { border-color: var(--accent); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+        .custom-options {
+            position: absolute; top: 100%; left: 0; right: 0;
+            border: 2px solid var(--accent); border-top: none;
+            border-bottom-left-radius: var(--border-radius); border-bottom-right-radius: var(--border-radius);
+            background: var(--input-bg); overflow: hidden; opacity: 0; visibility: hidden; pointer-events: none; transition: 0.1s;
+        }
+        .custom-select-wrapper.open .custom-options { opacity: 1; visibility: visible; pointer-events: all; }
+        .custom-option {
+            padding: 10px; text-align: center; font-size: 14px; cursor: pointer; color: var(--text-color); transition: 0.2s;
+        }
+        .custom-option:hover, .custom-option.selected { background-color: var(--accent); color: #000; font-weight: 600; }
+
+        .color-btn-container { position: relative; width: 100%; }
+        .color-display-btn {
+            width: 100%; height: var(--input-height); border: 2px solid var(--accent);
+            border-radius: var(--border-radius); background: var(--input-bg);
+            color: var(--text-color); cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        input[type="color"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+
+        .actions { display: flex; gap: 15px; margin-top: auto; padding-top: 20px; z-index: 1; }
+        .action-btn {
+            flex: 1; height: var(--input-height); border: 2px solid var(--accent);
+            border-radius: var(--border-radius); background: transparent; color: var(--text-color);
+            font-weight: 600; cursor: pointer; transition: 0.2s;
+        }
+        .action-btn:hover { background: var(--accent); color: #000; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <span class="header-icon">▶</span>
+        <h2>Appearance</h2>
+    </div>
+
+    <div class="form-container">
+        <label class="checkbox-wrapper">
+            <input type="checkbox" id="syncCheck">
+            <span class="checkmark"></span>
+            <span class="label-text">Sync with Windows Theme</span>
+        </label>
+        <div class="input-group">
+            <div class="color-btn-container" id="accentContainer">
+                <button class="color-display-btn" id="accentBtnLabel">Accent Color: #ff0000</button>
+                <input type="color" id="accentPicker" value="#ff0000">
+            </div>
+        </div>
+        <div class="input-group">
+            <span class="input-label">App Theme</span>
+            <select id="themeSelectNative" style="display: none;">
+                <option value="dark">Dark Mode</option>
+                <option value="light">Light Mode</option>
+                <option value="system">System Default</option>
+            </select>
+            <div class="custom-select-wrapper" id="customThemeSelect">
+                <div class="custom-select-trigger">Dark Mode</div>
+                <div class="custom-options">
+                    <div class="custom-option selected" data-value="dark">Dark Mode</div>
+                    <div class="custom-option" data-value="light">Light Mode</div>
+                    <div class="custom-option" data-value="system">System Default</div>
+                </div>
+            </div>
+        </div>
+        <label class="checkbox-wrapper">
+            <input type="checkbox" id="oledCheck">
+            <span class="checkmark"></span>
+            <span class="label-text">Enable OLED Mode</span>
+        </label>
+    </div>
+
+    <div class="actions">
+        <button class="action-btn" id="saveBtn">Save</button>
+        <button class="action-btn" id="cancelBtn">Cancel</button>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        const root = document.documentElement;
+        
+        // VARIABLE TO STORE SYSTEM COLOR
+        let lastSyncedColor = '#ff0000';
+
+        function applyThemeColors(mode) {
+            let isLight = false;
+            if (mode === 'light') isLight = true;
+            else if (mode === 'system') {
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+                    isLight = true;
+                }
+            }
+
+            if (isLight) {
+                root.style.setProperty('--bg-color', '#ffffff');
+                root.style.setProperty('--text-color', '#000000');
+                root.style.setProperty('--input-bg', '#f5f5f5');
+                root.style.setProperty('--border-color', '#ccc');
+                document.getElementById('oledCheck').checked = false;
+            } else {
+                root.style.setProperty('--bg-color', '#000000');
+                root.style.setProperty('--text-color', '#ffffff');
+                root.style.setProperty('--input-bg', '#111');
+                root.style.setProperty('--border-color', '#333');
+            }
+        }
+
+        function updateUI(color) {
+            // Safety: Ensure we have a valid hex, or fallback to Red
+            if (!color || color === 'undefined') color = '#ff0000';
+            root.style.setProperty('--accent', color);
+            document.getElementById('accentBtnLabel').innerText = `Accent Color: ${color}`;
+        }
+
+        // Dropdown Logic
+        const customWrapper = document.getElementById('customThemeSelect');
+        const customTrigger = customWrapper.querySelector('.custom-select-trigger');
+        const customOptions = customWrapper.querySelectorAll('.custom-option');
+        const nativeSelect = document.getElementById('themeSelectNative');
+
+        function setupDropdown() {
+            customTrigger.addEventListener('click', () => customWrapper.classList.toggle('open'));
+            customOptions.forEach(opt => {
+                opt.addEventListener('click', function() {
+                    customOptions.forEach(o => o.classList.remove('selected'));
+                    this.classList.add('selected');
+                    const val = this.getAttribute('data-value');
+                    nativeSelect.value = val;
+                    customTrigger.textContent = this.textContent;
+                    applyThemeColors(val); 
+                    customWrapper.classList.remove('open');
+                });
+            });
+            document.addEventListener('click', (e) => {
+                if (!customWrapper.contains(e.target)) customWrapper.classList.remove('open');
+            });
+        }
+        function setDropdown(val) {
+            nativeSelect.value = val;
+            customOptions.forEach(opt => {
+                if(opt.getAttribute('data-value') === val) {
+                    opt.classList.add('selected');
+                    customTrigger.textContent = opt.textContent;
+                } else opt.classList.remove('selected');
+            });
+            applyThemeColors(val);
+        }
+
+        async function handleSync() {
+            const isSync = document.getElementById('syncCheck').checked;
+            const container = document.getElementById('accentContainer');
+            
+            if (isSync) {
+                container.style.opacity = '0.5';
+                container.style.pointerEvents = 'none';
+                
+                try {
+                    let sys = await ipcRenderer.invoke('get-system-accent');
+                    if (sys) {
+                        lastSyncedColor = sys; // Save it to variable
+                        updateUI(sys);
+                        document.getElementById('accentPicker').value = sys; // Keep picker sync
+                    }
+                } catch(e) { console.error("Sync Error", e); }
+
+            } else {
+                container.style.opacity = '1';
+                container.style.pointerEvents = 'all';
+                // No update here, we trust the logic that happened on "uncheck"
+            }
+        }
+
+        try {
+            setupDropdown();
+            
+            // OLED Logic
+            document.getElementById('oledCheck').addEventListener('change', (e) => {
+                if (e.target.checked) setDropdown('dark');
+            });
+
+            // SYNC Logic: THE FIX
+            document.getElementById('syncCheck').addEventListener('change', (e) => {
+                // If UNCHECKING
+                if (!e.target.checked) {
+                    // Force picker to the last known system color BEFORE unlocking UI
+                    document.getElementById('accentPicker').value = lastSyncedColor;
+                    updateUI(lastSyncedColor);
+                }
+                handleSync();
+            });
+
+            const cfg = ipcRenderer.sendSync('get-config');
+            if (cfg) {
+                let color = cfg.text_color || "#ff0000";
+                
+                // Initialize state
+                lastSyncedColor = color; 
+                document.getElementById('accentPicker').value = color;
+                
+                if (!cfg.sync_theme) updateUI(color);
+
+                document.getElementById('oledCheck').checked = cfg.oled || false;
+                document.getElementById('syncCheck').checked = cfg.sync_theme || false;
+                setDropdown(cfg.theme_mode || 'dark');
+                
+                if (cfg.sync_theme) handleSync();
+            }
+
+            document.getElementById('accentPicker').addEventListener('input', (e) => {
+                updateUI(e.target.value);
+            });
+
+            document.getElementById('saveBtn').addEventListener('click', () => {
+                ipcRenderer.send('save-appearance', {
+                    text_color: root.style.getPropertyValue('--accent').trim(),
+                    oled: document.getElementById('oledCheck').checked,
+                    sync_theme: document.getElementById('syncCheck').checked,
+                    theme_mode: nativeSelect.value
+                });
+                window.close();
+            });
+            document.getElementById('cancelBtn').addEventListener('click', () => window.close());
+        } catch(e) { console.error(e); }
+    </script>
+</body>
+</html>
