@@ -1,4 +1,4 @@
-<!-- 1.2.1 -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -123,18 +123,12 @@
                          }
                     }
                     
-                    document.getElementById('replaceShorts').checked = cfg.replace_shorts || false;
                     document.getElementById('alwaysOnTop').checked = cfg.always_on_top || false;
                     document.getElementById('startOnBoot').checked = cfg.start_on_boot || false;
                     document.getElementById('enableAdBlock').checked = cfg.enable_adblock !== false;
                     document.getElementById('show_splash').checked = cfg.show_splash !== false;
 
-                    document.getElementById('av1').checked = cfg.use_av1 || false;
-                    document.getElementById('skia').checked = cfg.UseSkiaRenderer || false;
-                    document.getElementById('vaapi').checked = cfg.use_vaapi || false;
-                    document.getElementById('angle').checked = cfg.force_angle_d3d11 || false;
                     document.getElementById('gpuRaster').checked = cfg.enable_gpu || false;
-                    document.getElementById('zeroCopy').checked = cfg.enable_zero_copy || false;
                     document.getElementById('ignoreBlocklist').checked = cfg.ignore_gpu_blocklist || false;
                     document.getElementById('quic').checked = cfg.enable_quic || false;
                 }

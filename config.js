@@ -1,4 +1,4 @@
-//1.2.1
+
 const { app } = require('electron');
 const fs = require('fs');
 const path = require('path');
@@ -10,17 +10,10 @@ const defaults = {
     "text_color": "#ff0000",
     "oled": true,
     "show_splash": false,
-    "replace_shorts": false,
     "always_on_top": false,
     "start_on_boot": false,
     "enable_adblock": true,
-    "show_splash": true,
-    "use_av1": false,
-    "UseSkiaRenderer": false,
-    "use_vaapi": false,
-    "force_angle_d3d11": false,
     "enable_gpu": false,
-    "enable_zero_copy": false,
     "ignore_gpu_blocklist": false,
     "enable_quic": false
 };

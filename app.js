@@ -1,4 +1,4 @@
-//1.2.1
+
 const { app, BrowserWindow, Menu, ipcMain, shell, systemPreferences, nativeTheme, nativeImage, session, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -232,6 +232,11 @@ if (!gotTheLock) {
             icon: path.join(__dirname, 'icon.ico'),
             webPreferences: { nodeIntegration: false, contextIsolation: true },
             alwaysOnTop: cfg.always_on_top || false
+        });
+
+        mainWindow.on('close', (event) => {
+        event.preventDefault();
+        mainWindow.destroy();
         });
 
         mainWindow.webContents.setUserAgent(USER_AGENT_DESKTOP);

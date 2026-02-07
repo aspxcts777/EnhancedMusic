@@ -1,4 +1,4 @@
-//1.2.1
+
 const { app, Menu, BrowserWindow } = require('electron');
 
 const isMac = process.platform === 'darwin';
