@@ -1,4 +1,4 @@
-https://raw.githubusercontent.com/aspxcts777/EnhancedMusic/refs/heads/main/icon.png
+<img width="192" height="192" alt="ic_launcher" src="https://raw.githubusercontent.com/aspxcts777/EnhancedMusic/refs/heads/main/icon.png" />
 
 # EnhancedMusic
 
