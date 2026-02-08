@@ -44,6 +44,13 @@ const menuTemplate = [
             if(focusedWindow) focusedWindow.emit('open-options'); 
         }
       },
+      {
+        label: 'Equalizer',
+        accelerator: 'CmdOrCtrl+E', 
+        click: (item, focusedWindow) => { 
+            if(focusedWindow) focusedWindow.emit('open-equalizer'); 
+        }
+      },
       { type: 'separator' },
       {
         label: 'About',

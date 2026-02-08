@@ -46,6 +46,7 @@ if (!gotTheLock) {
     let aboutWindow = null;
     let optionsWindow = null;
     let appearanceWindow = null;
+    let equalizerWindow = null;
     let isPlaying = false; 
     let cfg = loadConfig();
 
@@ -225,6 +226,7 @@ if (!gotTheLock) {
             callback({ cancel: false, requestHeaders: details.requestHeaders });
         });
 
+
         mainWindow = new BrowserWindow({
             width: 1280, height: 720, title: "EnhancedTube", show: false,
             backgroundColor: cfg.oled ? '#000000' : '#0f0f0f',
@@ -234,16 +236,52 @@ if (!gotTheLock) {
             titleBarOverlay: {
             color: '#000000',      
             symbolColor: '#ffffff', 
-            height: 20              
+            height: 20,
+            sandbox: false              
             },
             webPreferences: { nodeIntegration: false, contextIsolation: true ,preload: path.join(__dirname, 'preload.js')},
             alwaysOnTop: cfg.always_on_top || false,
         });
-
         mainWindow.on('close', (event) => {
         event.preventDefault();
         mainWindow.destroy();
         });
+
+        mainWindow.webContents.session.webRequest.onHeadersReceived(
+    { urls: ['*://*.googlevideo.com/*'] },
+    (details, callback) => {
+        const responseHeaders = Object.assign({}, details.responseHeaders);
+
+        // 1. REMOVE existing CORS headers to prevent conflicts
+        // (Google sends its own, we must delete them to replace them)
+        const keysToRemove = [
+            'access-control-allow-origin',
+            'access-control-allow-credentials',
+            'access-control-allow-methods',
+            'access-control-allow-headers'
+        ];
+
+        Object.keys(responseHeaders).forEach((header) => {
+            if (keysToRemove.includes(header.toLowerCase())) {
+                delete responseHeaders[header];
+            }
+        });
+
+        // 2. SET the correct headers for Authenticated Requests
+        // We MUST match the origin exactly. Wildcard '*' is illegal here.
+        responseHeaders['Access-Control-Allow-Origin'] = ['https://music.youtube.com'];
+        responseHeaders['Access-Control-Allow-Credentials'] = ['true'];
+        
+        // Optional: Allow common headers just in case
+        responseHeaders['Access-Control-Allow-Headers'] = ['*'];
+        responseHeaders['Access-Control-Allow-Methods'] = ['GET, HEAD, POST, OPTIONS'];
+
+        callback({ 
+            responseHeaders: responseHeaders,
+            statusLine: details.statusLine 
+        });
+    }
+);
 
         mainWindow.webContents.setUserAgent(USER_AGENT_DESKTOP);
         app.setLoginItemSettings({ openAtLogin: cfg.start_on_boot || false, path: app.getPath('exe') });
@@ -298,6 +336,37 @@ if (!gotTheLock) {
             } catch (e) {}
         }, 500);
 
+        mainWindow.on('open-equalizer', () => { 
+            if (equalizerWindow) {
+                equalizerWindow.focus();
+                return;
+            }
+
+            equalizerWindow = new BrowserWindow({
+                width: 400,
+                height: 500,
+                title: "Equalizer",
+                parent: mainWindow, // floats on top of main window
+                modal: false,       // false = you can still click the main window
+                icon: path.join(__dirname, 'icon.ico'),
+                autoHideMenuBar: true,
+                backgroundColor: '#121212',
+                resizable: false,
+                minimizable: false,
+                webPreferences: {
+                    nodeIntegration: true,   // Needed for the EQ HTML script
+                    contextIsolation: false  // Simplifies communication for this popup
+                }
+            });
+
+            equalizerWindow.loadFile('equalizer.html');
+            equalizerWindow.setMenu(null);
+            
+            equalizerWindow.on('closed', () => {
+                equalizerWindow = null;
+            });
+        });
+
         nativeTheme.on('updated', () => { if (cfg.theme_mode === 'system') injectTheme(); });
         mainWindow.on('open-appearance', () => { 
             if (appearanceWindow) appearanceWindow.focus(); 
@@ -341,5 +410,28 @@ if (!gotTheLock) {
     ipcMain.on('show-context-menu', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     mainMenu.popup({ window: win });
+    });
+    ipcMain.on('eq-update', (event, gains) => {
+    console.log("1. App.js received EQ update:", gains); // <--- DEBUG LOG
+
+    // Save config
+    if (cfg) {
+        cfg.eq_settings = gains;
+        saveConfig(cfg);
+    }
+
+    // Check if mainWindow exists
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        console.log("2. Forwarding to Main Window..."); // <--- DEBUG LOG
+        mainWindow.webContents.send('apply-eq', gains);
+    } else {
+        console.log("ERROR: Main Window is missing or destroyed!");
+    }
 });
+
+    // 2. Allow Equalizer Window to request current settings on startup
+    ipcMain.handle('get-eq-settings', () => {
+        // Return saved settings or a default "Flat" EQ
+        return cfg.eq_settings || [0,0,0,0,0,0,0,0,0,0];
+    });
 }

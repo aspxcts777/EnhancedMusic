@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Equalizer</title>
+    <style>
+        :root {
+            --bg-color: #000000;       /* OLED Black */
+            --accent-color: #6B69D6;   /* Default Purple (will update dynamically) */
+            --text-color: #ffffff;
+            --text-secondary: #a0a0a0;
+            --border-radius: 8px;
+            --slider-track: #2a2a2a;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            margin: 0;
+            padding: 20px;
+            user-select: none;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        /* --- Header --- */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h2 { 
+            margin: 0; 
+            font-size: 18px; 
+            font-weight: 600; 
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* The triangle icon from the screenshot */
+        h2::before {
+            content: '';
+            display: inline-block;
+            width: 0; height: 0; 
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+            border-left: 8px solid var(--accent-color);
+            transition: border-left-color 0.3s ease;
+        }
+
+        /* --- Reset Button --- */
+        #reset {
+            background: transparent;
+            border: 1px solid #333;
+            color: var(--text-secondary);
+            padding: 4px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        #reset:hover {
+            border-color: var(--text-color);
+            color: var(--text-color);
+        }
+
+        /* --- Presets Row --- */
+        .presets {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #222;
+            justify-content: center;
+        }
+
+        .preset-btn {
+            background: transparent;
+            border: 1px solid var(--accent-color);
+            color: var(--text-color);
+            padding: 6px 14px;
+            border-radius: 20px; /* Rounded pill shape from screenshot */
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            outline: none;
+            min-width: 60px;
+        }
+
+        .preset-btn:hover {
+            background: rgba(255, 255, 255, 0.1); 
+        }
+
+        /* Active State */
+        .preset-btn.active {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            color: #ffffff; /* Text color on filled button */
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        /* --- Sliders Area --- */
+        .sliders-container {
+            display: flex;
+            justify-content: space-between;
+            flex-grow: 1;
+            align-items: center;
+            padding: 0 5px;
+        }
+
+        .band {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            width: 30px;
+            position: relative;
+        }
+
+        /* Vertical Range Input Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 180px; /* Length of the vertical slider */
+            height: 4px;  /* Thickness of the track */
+            background: var(--slider-track);
+            border-radius: 2px;
+            transform: rotate(-90deg);
+            outline: none;
+            position: absolute;
+            top: 50%; left: 50%;
+            margin-top: -2px; margin-left: -90px;
+            cursor: pointer;
+        }
+
+        /* The Thumb (Dot) */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px; height: 14px;
+            background: #ffffff; /* White center */
+            border: none;
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent-color); /* Glow effect */
+            margin-top: -5px; /* Center on track */
+            transition: transform 0.1s;
+        }
+
+        input[type=range]:hover::-webkit-slider-thumb {
+            transform: scale(1.3);
+        }
+
+        /* Labels */
+        .value {
+            position: absolute; top: -5px;
+            font-size: 11px; font-weight: bold;
+            color: var(--accent-color);
+            opacity: 0.9;
+        }
+
+        .label {
+            position: absolute; bottom: -5px;
+            font-size: 10px; color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h2>Equalizer</h2>
+        <button id="reset">Reset</button>
+    </div>
+
+    <div class="presets">
+        <button class="preset-btn" onclick="setPreset('bass', this)">Bass</button>
+        <button class="preset-btn" onclick="setPreset('vocal', this)">Vocal</button>
+        <button class="preset-btn" onclick="setPreset('treble', this)">Treble</button>
+        <button class="preset-btn" onclick="setPreset('loudness', this)">Loudness</button>
+    </div>
+
+    <div class="sliders-container" id="sliders"></div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        const freqs = [60, 170, 310, 600, '1k', '3k', '6k', '12k', '14k', '16k'];
+        
+        // 1. Generate Sliders
+        const container = document.getElementById('sliders');
+        freqs.forEach((f, i) => {
+            container.innerHTML += `
+                <div class="band">
+                    <span class="value" id="val-${i}">0</span>
+                    <input type="range" class="slider" data-index="${i}" min="-12" max="12" step="0.5" value="0">
+                    <span class="label">${f}</span>
+                </div>
+            `;
+        });
+
+        const inputs = document.querySelectorAll('.slider');
+        const presetButtons = document.querySelectorAll('.preset-btn');
+
+        // 2. Fetch & Sync Accent Color
+        function syncTheme() {
+            try {
+                // Get main config synchronously
+                const cfg = ipcRenderer.sendSync('get-config');
+                
+                // Determine the correct color
+                if (cfg.sync_theme) {
+                    // If syncing with windows, ask main process for the system color
+                    ipcRenderer.invoke('get-system-accent').then(sysColor => {
+                        document.documentElement.style.setProperty('--accent-color', sysColor);
+                    });
+                } else {
+                    // Otherwise use the manual color from appearance settings
+                    const manualColor = cfg.text_color || '#6B69D6';
+                    document.documentElement.style.setProperty('--accent-color', manualColor);
+                }
+            } catch (e) {
+                console.error("Theme Sync Error:", e);
+            }
+        }
+        
+        // Run once on load
+        syncTheme();
+
+        // 3. Update Audio Engine
+        function updateEQ() {
+            const gains = Array.from(inputs).map(input => parseFloat(input.value));
+            ipcRenderer.send('eq-update', gains);
+        }
+
+        // 4. Slider Interaction
+        inputs.forEach(input => {
+            input.addEventListener('input', (e) => {
+                const val = e.target.value;
+                const displayVal = val > 0 ? `+${val}` : val;
+                document.getElementById(`val-${e.target.dataset.index}`).innerText = displayVal;
+                
+                // If user moves a slider, no preset is active anymore
+                presetButtons.forEach(btn => btn.classList.remove('active'));
+                
+                updateEQ();
+            });
+        });
+
+        // 5. Reset Button
+        document.getElementById('reset').addEventListener('click', () => {
+            inputs.forEach((input, i) => {
+                input.value = 0;
+                document.getElementById(`val-${i}`).innerText = "0";
+            });
+            presetButtons.forEach(btn => btn.classList.remove('active'));
+            updateEQ();
+        });
+
+        // 6. Preset Logic (Including Loudness)
+        window.setPreset = (type, btnElement) => {
+            let values = [];
+
+            if (type === 'bass') values = [8, 6, 4, 2, 0, 0, 0, 0, 0, 0];
+            if (type === 'vocal') values = [-2, -2, -1, 1, 4, 5, 4, 2, 0, 0];
+            if (type === 'treble') values = [0, 0, 0, 0, 0, 2, 4, 6, 8, 8];
+            if (type === 'loudness') values = [12, 10, 6, 4, 2, 2, 4, 6, 10, 12];
+
+            inputs.forEach((input, i) => {
+                input.value = values[i];
+                const displayVal = values[i] > 0 ? `+${values[i]}` : values[i];
+                document.getElementById(`val-${i}`).innerText = displayVal;
+            });
+
+            presetButtons.forEach(b => b.classList.remove('active'));
+            if(btnElement) btnElement.classList.add('active');
+
+            updateEQ();
+        }
+
+        ipcRenderer.invoke('get-eq-settings').then(gains => {
+            if (gains && gains.length) {
+                inputs.forEach((input, i) => {
+                    input.value = gains[i];
+                    const displayVal = gains[i] > 0 ? `+${gains[i]}` : gains[i];
+                    document.getElementById(`val-${i}`).innerText = displayVal;
+                });
+            }
+        });
+    </script>
+</body>
+</html>

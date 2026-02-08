@@ -1,7 +1,7 @@
 {
   "name": "enhanced-music",
   "productName": "EnhancedMusic",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Enhanced Music Player with Advanced Features.",
   "keywords": [
     "Music",
@@ -67,5 +67,8 @@
     "releaseInfo": {
       "releaseNotesFile": "release-notes.md"
     }
+  },
+  "dependencies": {
+    "fs": "^0.0.1-security"
   }
 }
