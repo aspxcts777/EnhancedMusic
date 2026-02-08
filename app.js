@@ -230,8 +230,14 @@ if (!gotTheLock) {
             backgroundColor: cfg.oled ? '#000000' : '#0f0f0f',
             frame: true,
             icon: path.join(__dirname, 'icon.ico'),
-            webPreferences: { nodeIntegration: false, contextIsolation: true },
-            alwaysOnTop: cfg.always_on_top || false
+            titleBarStyle: 'hidden',
+            titleBarOverlay: {
+            color: '#000000',      
+            symbolColor: '#ffffff', 
+            height: 20              
+            },
+            webPreferences: { nodeIntegration: false, contextIsolation: true ,preload: path.join(__dirname, 'preload.js')},
+            alwaysOnTop: cfg.always_on_top || false,
         });
 
         mainWindow.on('close', (event) => {
@@ -331,4 +337,9 @@ if (!gotTheLock) {
 
     ipcMain.on('get-config', (event) => { event.returnValue = cfg; });
     app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
+
+    ipcMain.on('show-context-menu', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    mainMenu.popup({ window: win });
+});
 }

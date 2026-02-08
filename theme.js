@@ -9,77 +9,41 @@ module.exports.getThemeCss = (cfg, accent, isDark) => {
     // --- MODE 1: STANDARD (Non-OLED) ---
     if (!cfg.oled) {
         return `
-            html, body, :root, ytmusic-app {
-    /* Main Accent Variables */
-    --ytmusic-color-white1: #ffffff !important;
-    --ytmusic-brand-background-solid: ${bgSecond} !important;
-    
-    /* Force Polymer Sliders (Volume & Progress) to use accent */
+           /* =========================
+   1. NON-OLED VARIABLES (STANDARD DARK)
+   ========================= */
+html, body, :root, ytmusic-app {
+
+    /* Accent */
     --paper-slider-active-color: ${accent} !important;
     --paper-slider-knob-color: ${accent} !important;
     --paper-slider-knob-start-color: ${accent} !important;
     --paper-slider-knob-start-border-color: ${accent} !important;
-    
-    /* Toggle Switches (Settings) */
     --ytmusic-setting-item-toggle-active: ${accent} !important;
-    
-    /* Links & Buttons */
     --ytmusic-detail-header: ${accent} !important;
-    --ytmusic-play-button-icon-color: #ffffff !important; 
+    --ytmusic-play-button-icon-color: #ffffff !important;
 }
 
-ytmusic-nav-bar .logo,
-ytmusic-nav-bar #logo,
-ytmusic-logo {
-    display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    width: 0px !important;
-    margin-right: 0px !important;
+
+
+/* =========================
+   4. TOP BAR
+   ========================= */
+yt-page-navigation-progress {
+    display: block !important;
+    opacity: 1 !important;
+    z-index: 99999 !important;
+    --yt-spec-static-brand-red: ${accent} !important;
+    --yt-spec-brand-background-solid: ${accent} !important;
+    --yt-progress-bar-color: ${accent} !important;
 }
 
-/* B. TOP BAR / NAVIGATION */
-ytmusic-nav-bar,
---ytmusic-search-background: #000000 !important;
-ytmusic-app-layout > ytmusic-nav-bar {
-    background: ${bgSecond} !important;
-    background-color: ${bgSecond} !important;
-    border-bottom: 1px solid ${bgSecond} !important; /* Removes the ugly line */
-    box-shadow: none !important; /* Removes default shadow */
-}
-
-/* 2. Override the variable controls (Double check) */
-html, body, ytmusic-app {
-    --ytmusic-nav-bar-background: ${bgSecond} !important;
-    --ytmusic-nav-bar-stuck-background: ${bgSecond} !important;
-}
-
-/* 3. Fix the Search Box so it doesn't look like a "hole" */
-/* We give it a slight semi-transparent tint so it works on ANY background color */
-ytmusic-search-box,
-.search-box.ytmusic-search-box {
-    background: rgba(255, 255, 255, 0.07) !important; 
-    border-radius: 8px !important;
-}
-
-/* 4. Fix the Search Input Field Text Color */
-ytmusic-search-box input {
-    color: var(--ytmusic-text-primary) !important;
-    font-weight: 500 !important;
-}
-
-/* C. PLAYER PROGRESS BAR & VOLUME */
-/* The main scrubber bar */
-#progress-bar.ytmusic-player-bar {
-    --paper-slider-active-color: ${accent} !important;
-    --paper-slider-knob-color: ${accent} !important;
-    --paper-slider-container-color: rgba(255,255,255,0.2) !important;
-}
-
-/* The Volume Slider */
-#volume-slider {
-    --paper-slider-active-color: ${accent} !important;
-    --paper-slider-knob-color: ${accent} !important;
+yt-page-navigation-progress #progress,
+yt-page-navigation-progress .id-progress {
+    background: ${accent} !important;
+    background-color: ${accent} !important;
+    background-image: none !important;
+    height: 3px !important;
 }
 
 yt-icon,
@@ -90,81 +54,213 @@ tp-yt-paper-icon-button yt-icon {
     fill: ${accent} !important;
 }
 
-/* D. PLAY BUTTONS (FAB & HOVER) */
-/* The big Play button on Album/Playlist pages */
-.play-button.ytmusic-detail-header-renderer,
-ytmusic-fab-renderer.ytmusic-detail-header-renderer,
-#fab.ytmusic-detail-header-renderer {
-    background-color: ${accent} !important;
-    color: #ffffff !important;
+/* Sidebar icons */
+ytd-guide-entry-renderer yt-icon,
+ytmusic-guide-entry-renderer yt-icon {
+    color: ${accent} !important;
+    fill: ${accent} !important;
 }
 
-/* The Play/Pause button inside the bottom player bar */
+/* Active sidebar item */
+ytd-guide-entry-renderer[active] yt-icon,
+ytmusic-guide-entry-renderer[active] yt-icon {
+    color: ${accent} !important;
+    fill: ${accent} !important;
+}
+
+/* Top bar action icons */
+ytd-masthead yt-icon,
+ytmusic-nav-bar yt-icon {
+    color: ${accent} !important;
+    fill: ${accent} !important;
+}
+
+/* Player controls */
+ytmusic-player-bar yt-icon,
+ytmusic-player-bar tp-yt-paper-icon-button {
+    color: ${accent} !important;
+    fill: ${accent} !important;
+}
+
+yt-icon svg path {
+    fill: ${accent} !important;
+}
+
+
+
+/* D. SEARCH BAR FIXES */
+ytmusic-search-box {
+    background: rgba(255,255,255,0.1) !important;
+    border-radius: 8px !important;
+}
+
+/* =========================
+   5. SEARCH BOX
+   ========================= */
+ytmusic-search-box,
+.search-box.ytmusic-search-box {
+    background: rgba(255,255,255,0.08) !important;
+    border-radius: 8px !important;
+}
+
+ytmusic-search-box input {
+    color: var(--ytmusic-text-primary) !important;
+}
+
+/* =========================
+   6. PLAYER SLIDERS
+   ========================= */
+#progress-bar.ytmusic-player-bar,
+#volume-slider {
+    --paper-slider-active-color: ${accent} !important;
+    --paper-slider-knob-color: ${accent} !important;
+    --paper-slider-container-color: #212121 !important; /* Lighter gray track */
+}
+
+/* =========================
+   7. PLAY BUTTONS
+   ========================= */
 ytmusic-player-bar #play-pause-button {
     background: ${accent} !important;
     border-radius: 50% !important;
     color: #ffffff !important;
-    box-shadow: 0 0 10px ${accent}40; /* Optional: adds a slight glow */
 }
-/* Fix icon color inside the player button */
+
 ytmusic-player-bar #play-pause-button path {
     fill: #ffffff !important;
 }
 
-/* Overlay Play Button (hovering over tracks/albums) */
-ytmusic-play-button-renderer {
-    --ytmusic-play-button-icon-color: ${accent} !important;
-    --ytmusic-play-button-background-color: #00000000 !important; 
-    /* OR invert it: background ${accent}, icon white */
-}
-
-/* E. BADGES & ICONS */
-/* "Live" Badge */
-ytmusic-badge-renderer.live-badge {
-    color: ${accent} !important;
-    border-color: ${accent} !important;
-}
-
-/* Explicit "E" Badge */
-yt-icon.ytmusic-inline-badge-renderer {
-    fill: ${accent} !important;
-    color: ${accent} !important;
-}
-
-/* F. LOGO RECOLOR (Top Left) */
-/* This targets the circle part of the logo */
-ytmusic-nav-bar #logo svg g > path:nth-child(1) {
-    fill: ${accent} !important;
-}
-/* This targets the triangle (play symbol) in the logo */
-ytmusic-nav-bar #logo svg g > path:nth-child(2) {
-    fill: #ffffff !important; /* Keep the triangle white */
-}
-
-/* G. MISC / SCROLLBARS */
-/* Custom Scrollbar to match */
-::-webkit-scrollbar-thumb {
-    background: ${accent} !important;
-    border-radius: 10px;
-}
-::-webkit-scrollbar-track {
-    background: ${bgSecond} !important;
-}
-
-/* Loading Spinner (The red circular loader) */
-paper-spinner-lite {
-    --paper-spinner-color: ${accent} !important;
-}
-
-/* Active Sidebar Items (Left Menu) */
-ytmusic-guide-entry-renderer[active] .guide-icon {
-    color: ${accent} !important;
-}
+/* =========================
+   8. SIDEBAR ACTIVE
+   ========================= */
+ytmusic-guide-entry-renderer[active] .guide-icon,
 ytmusic-guide-entry-renderer[active] .title {
     color: ${accent} !important;
     font-weight: 700 !important;
 }
-            }
+
+/* =========================
+   9. SCROLLBAR + LOADER
+   ========================= */
+::-webkit-scrollbar-thumb {
+    background: ${accent} !important;
+}
+
+paper-spinner-lite {
+    --paper-spinner-color: ${accent} !important;
+}
+
+/* =========================
+   REMOVE SIDEBAR SEPARATOR
+   ========================= */
+ytmusic-guide-renderer,
+#guide-wrapper,
+#guide-content {
+    border-right: none !important;
+    box-shadow: none !important;
+}
+ytmusic-guide-section-renderer {
+    border-bottom: none !important;
+}
+
+ytmusic-guide-renderer #separator {
+    display: none !important;
+}
+ytmusic-guide-renderer #divider,
+ytmusic-guide-renderer .separator,
+ytmusic-guide-section-renderer #separator {
+    display: none !important;
+    visibility: hidden !important;
+    background: transparent !important;
+    height: 0px !important;
+    border: none !important;
+}
+ytmusic-mini-guide-renderer #separator {
+    display: none !important;
+}
+ytmusic-mini-guide-renderer #divider,
+ytmusic-mini-guide-renderer .separator,
+ytmusic-mini-guide-section-renderer #separator {
+    display: none !important;
+    visibility: hidden !important;
+    background: transparent !important;
+    height: 0px !important;
+    border: none !important;
+}
+ytmusic-mini-guide-renderer #separator {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+ytmusic-mini-guide-renderer #items {
+    border-bottom: none !important;
+}
+
+ytmusic-mini-guide-signin-promo-renderer {
+    border: none !important;
+    margin-top: 0px !important; 
+}
+
+/* HIDE ORIGINAL LOGO */
+ytmusic-nav-bar .logo,
+ytmusic-nav-bar #logo,
+ytmusic-logo {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    width: 0px !important;
+    margin-right: 0px !important;
+}
+
+/* =========================
+   LAYOUT FIXES (EXACT COPY)
+   ========================= */
+
+ytmusic-nav-bar,
+ytmusic-app-layout > ytmusic-nav-bar {
+    /* 1. POSITIONING */
+    position: fixed !important;
+    top: 32px !important;        /* Pushed down 32px */
+    left: 0 !important;
+    width: 100% !important;
+    height: 64px !important;     /* Force standard height */
+    z-index: 1000 !important;
+
+    /* 2. THE BACKGROUND COLOR */
+    /* We apply the color directly here so it moves WITH the bar */
+    background: #000000 !important; /* Standard Dark Mode Color */
+    background-color: #000000 !important;
+    
+    /* 3. CLEANUP */
+    border-bottom: 1px solid rgba(255,255,255,0.1) !important; /* Optional separator line */
+    box-shadow: none !important;
+    margin-top: 0 !important;
+}
+
+/* 2. Push the Side Menu (Home/Explore) down */
+ytmusic-guide-renderer,
+#guide-wrapper {
+    top: 24px !important; /* Kept your requested offset */
+    height: calc(100vh - 96px) !important;
+    z-index: 999 !important;
+}
+
+/* 3. Push the main scrolling content area down */
+#browse-page,
+ytmusic-browse-response {
+    padding-top: 32px !important;
+}
+
+/* 4. Fix Search Suggestions Dropdown position */
+ytmusic-search-box ytmusic-search-suggestions-section {
+    top: 85px !important; 
+}
+
+/* 5. Additional Spacing for Sidebar Sections */
+ytmusic-guide-section-renderer {
+    margin-top: 30px !important;
+}
         `;
     }
 
@@ -421,6 +517,40 @@ ytmusic-logo {
     width: 0px !important;
     margin-right: 0px !important;
 }
+
+
+
+            /* 1. Push the Search Bar / Header down */
+            ytmusic-nav-bar,
+            ytmusic-app-layout > ytmusic-nav-bar {
+                top: 32px !important; /* Height of your custom bar */
+                position: fixed !important;
+                z-index: 1000 !important;
+                width: 100% !important;
+            }
+
+            /* 2. Push the Side Menu (Home/Explore) down */
+            /* 32px (Custom Bar) + 64px (Nav Bar) = 96px */
+            ytmusic-guide-renderer,
+            #guide-wrapper {
+                top: 24px !important;
+                height: calc(100vh - 96px) !important;
+                z-index: 999 !important;
+            }
+
+            /* 3. Push the main scrolling content area down */
+            #browse-page,
+            ytmusic-browse-response {
+                padding-top: 32px !important;
+            }
+
+            /* 4. Fix Search Suggestions Dropdown position */
+            ytmusic-search-box ytmusic-search-suggestions-section {
+                top: 85px !important; 
+            }
+            ytmusic-guide-section-renderer {
+                margin-top: 30px !important;
+            }
 
     `;
 };
