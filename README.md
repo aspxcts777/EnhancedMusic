@@ -15,13 +15,9 @@
 - 📌 Splash screen on startup
 - 🧩 Lightweight and easy to use
 
-## 🚀 Demo / Preview
-
-If you have a hosted preview:
+## 🚀 Website
 
 👉 https://aspxcts777.github.io/enhanced
-
-*(Remove this section if unused.)*
 
 ## 📦 Installation
 
