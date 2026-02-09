@@ -1,159 +1,196 @@
-const {contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer } = require('electron');
 
 window.addEventListener('DOMContentLoaded', () => {
-    // 1. Create the Custom Title Bar Container
+    
+    // --- 0. THEME LOGIC: Fetch Config & Determine Colors ---
+    let cfg = {};
+    try {
+        cfg = ipcRenderer.sendSync('get-config');
+    } catch (e) { console.error("Could not fetch config:", e); }
+
+    const isSystemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    let isDark = true; 
+
+    if (cfg.theme_mode === 'light') isDark = false;
+    else if (cfg.theme_mode === 'system') isDark = isSystemDark;
+
+    const barBg = isDark ? '#000000' : '#ffffff';
+    const barText = isDark ? '#ffffff' : '#000000';
+    const barBorder = isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)';
+
+    // --- 1. Custom Title Bar ---
     const titleBar = document.createElement('div');
+    titleBar.id = 'title-bar'; 
     titleBar.style.cssText = `
         width: 100%;
-        height: 32px; /* Matches your CSS offset */
-        background: #000000; 
+        height: 32px;
+        background: ${barBg};
         display: flex;
         align-items: center;
         padding-left: 10px;
         position: fixed;
         top: 0;
         left: 0;
-        z-index: 999999; /* Higher than everything */
-        -webkit-app-region: drag; /* Makes it draggable */
-        border-bottom: 1px solid rgba(255,255,255,0.1);
+        z-index: 999999;
+        -webkit-app-region: drag;
+        border-bottom: ${barBorder};
+        transition: background 0.3s ease;
     `;
 
-    // 2. Create the "Menu" Button
     const menuBtn = document.createElement('button');
     menuBtn.innerText = 'Enhanced Music';
+    menuBtn.id = 'menu-btn';
     menuBtn.style.cssText = `
         background: transparent;
-        color: white;
+        color: ${barText};
         border: none;
         cursor: pointer;
-        font-family: Roboto, sans-serif;
+        font-family: 'Segoe UI', Roboto, sans-serif;
         font-size: 13px;
-        font-weight: 500;
-        -webkit-app-region: no-drag; /* Buttons must be CLICKABLE, not draggable */
+        font-weight: 600;
+        -webkit-app-region: no-drag;
         padding: 5px 10px;
         margin-right: 10px;
         opacity: 0.9;
     `;
     
-    // 3. When clicked, signal the Main Process
     menuBtn.onclick = () => {
         ipcRenderer.send('show-context-menu');
     };
 
-    // 4. Inject into the page
     titleBar.appendChild(menuBtn);
     document.body.prepend(titleBar);
 
+    // =========================================================
+    // AUDIO ENGINE LOGIC
+    // =========================================================
     let audioContext = null;
-let source = null;
-let eqBands = [];
-const frequencies = [60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000];
+    let source = null;
+    let eqBands = [];
+    const frequencies = [60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000];
 
-// 1. DEEP SEARCH HELPER (Drills through Shadow DOM)
-function findVideoRecursive(root) {
-    if (!root) return null;
-    let video = root.querySelector('video');
-    if (video) return video;
+    function findVideoRecursive(root) {
+        if (!root) return null;
+        let video = root.querySelector('video');
+        if (video) return video;
 
-    // Check all children for Shadow Roots
-    const children = root.querySelectorAll('*');
-    for (const child of children) {
-        if (child.shadowRoot) {
-            const found = findVideoRecursive(child.shadowRoot);
-            if (found) return found;
+        const children = root.querySelectorAll('*');
+        for (const child of children) {
+            if (child.shadowRoot) {
+                const found = findVideoRecursive(child.shadowRoot);
+                if (found) return found;
+            }
+        }
+        return null;
+    }
+
+    function initEqualizer() {
+        if (audioContext && eqBands.length > 0) return;
+
+        const videoElement = findVideoRecursive(document.body);
+        if (!videoElement) {
+            return;
+        }
+
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioContext = new AudioContext();
+            
+            source = audioContext.createMediaElementSource(videoElement);
+
+            eqBands = frequencies.map(freq => {
+                const filter = audioContext.createBiquadFilter();
+                filter.type = 'peaking';
+                filter.frequency.value = freq;
+                filter.Q.value = 1.4;
+                filter.gain.value = 0;
+                return filter;
+            });
+
+            let previousNode = source;
+            eqBands.forEach(band => {
+                previousNode.connect(band);
+                previousNode = band;
+            });
+            previousNode.connect(audioContext.destination);
+
+            console.log("%c EQ ATTACHED SUCCESSFULLY! ", "background: #00ff00; color: black; font-weight: bold; padding: 4px;");
+
+        } catch (e) {
+            console.error("EQ Connection Error:", e);
         }
     }
-    return null;
-}
 
-// 2. INITIALIZE ENGINE
-function initEqualizer() {
-    if (audioContext && eqBands.length > 0) return; // Already running
+    // --- 3. STARTUP LOOP & AUTO-LOAD SAVE ---
+    const checkInterval = setInterval(() => {
+        if (eqBands.length > 0) {
+            // Engine is ready! Stop checking.
+            clearInterval(checkInterval);
+            
+            // FIX: FETCH AND APPLY SAVED SETTINGS AUTOMATICALLY
+            ipcRenderer.invoke('get-eq-settings').then(savedGains => {
+                if (savedGains && savedGains.length) {
+                    console.log("Applying saved EQ settings:", savedGains);
+                    updateGains(savedGains);
+                }
+            });
 
-    // Use deep search to find the player
-    const videoElement = findVideoRecursive(document.body);
+        } else {
+            initEqualizer();
+        }
+    }, 1000);
 
-    if (!videoElement) {
-        console.log("EQ: Waiting for video player...");
-        return;
-    }
+    // 4. THE CONTROL FUNCTION
+    function updateGains(gains) {
+        if (!eqBands.length) {
+            // If the user tries to set EQ before music starts, we try to init
+            initEqualizer();
+            return;
+        }
 
-    try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        audioContext = new AudioContext();
-        
-        // Connect to YouTube's video element
-        source = audioContext.createMediaElementSource(videoElement);
+        // Resume AudioContext if browser policy suspended it
+        if (audioContext.state === 'suspended') {
+            audioContext.resume();
+        }
 
-        // Create the 10 Bands
-        eqBands = frequencies.map(freq => {
-            const filter = audioContext.createBiquadFilter();
-            filter.type = 'peaking';
-            filter.frequency.value = freq;
-            filter.Q.value = 1.4;
-            filter.gain.value = 0;
-            return filter;
+        gains.forEach((db, index) => {
+            if (eqBands[index]) {
+                eqBands[index].gain.setTargetAtTime(db, audioContext.currentTime, 0.1);
+            }
         });
-
-        // Connect Chain: Source -> Bands -> Destination
-        let previousNode = source;
-        eqBands.forEach(band => {
-            previousNode.connect(band);
-            previousNode = band;
-        });
-        previousNode.connect(audioContext.destination);
-
-        console.log("%c EQ ATTACHED SUCCESSFULLY! ", "background: #00ff00; color: black; font-weight: bold; padding: 4px;");
-
-    } catch (e) {
-        console.error("EQ Connection Error (Check CORS settings in main.js):", e);
-    }
-}
-
-// 3. AGGRESSIVE SEARCH LOOP
-// We check every second until we find the video.
-const checkInterval = setInterval(() => {
-    if (eqBands.length > 0) {
-        clearInterval(checkInterval); // Stop searching once found
-    } else {
-        initEqualizer();
-    }
-}, 1000);
-
-// 4. THE CONTROL FUNCTION
-function updateGains(gains) {
-    if (!eqBands.length) {
-        console.warn("EQ Not Ready: Still looking for video player. Ensure music is loaded.");
-        initEqualizer();
-        return;
     }
 
-    // Resume if browser paused it (Autoplay Policy)
-    if (audioContext.state === 'suspended') {
-        audioContext.resume();
-    }
+    // 5. EXPOSE TO MAIN WORLD
+    contextBridge.exposeInMainWorld('enhancedAudio', {
+        setEQ: (gains) => updateGains(gains)
+    });
 
-    gains.forEach((db, index) => {
-        if (eqBands[index]) {
-            eqBands[index].gain.setTargetAtTime(db, audioContext.currentTime, 0.1);
+    ipcRenderer.on('apply-eq', (event, gains) => {
+        if (window.enhancedAudio) {
+            window.enhancedAudio.setEQ(gains);
+        } else {
+            updateGains(gains); 
         }
     });
-}
 
-// 5. EXPOSE TO MAIN WORLD
-// This allows you to use 'window.enhancedAudio.setEQ(...)'
-contextBridge.exposeInMainWorld('enhancedAudio', {
-    setEQ: (gains) => updateGains(gains)
-});
-
-ipcRenderer.on('apply-eq', (event, gains) => {
-    
-    // Send to the audio engine we built earlier
-    if (window.enhancedAudio) {
-        window.enhancedAudio.setEQ(gains);
-    } else {
-        updateGains(gains); 
-    }
-});
-
+    // --- FIX TIME BUBBLE TEXT COLOR (Shadow DOM Injection) ---
+    setInterval(() => {
+        const slider = document.querySelector('ytmusic-player-bar tp-yt-paper-slider');
+        if (slider && slider.shadowRoot) {
+            if (!slider.shadowRoot.querySelector('#force-pin-black')) {
+                const style = document.createElement('style');
+                style.id = 'force-pin-black';
+                style.textContent = `
+                    .slider-knob-inner {
+                        color: #000000 !important;
+                        --paper-slider-font-color: #000000 !important;
+                    }
+                    .slider-knob-inner::after {
+                        color: #000000 !important;
+                    }
+                `;
+                slider.shadowRoot.appendChild(style);
+            }
+        }
+    }, 1000);
 });

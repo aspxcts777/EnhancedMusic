@@ -112,15 +112,71 @@ if (!gotTheLock) {
 
     function injectTheme() {
         if (!mainWindow) return;
-        let accent = cfg.text_color || "#ff0000";
-        if (cfg.sync_theme && process.platform === 'win32') {
-            let sysColor = systemPreferences.getAccentColor(); 
-            if (sysColor && sysColor.substring(0, 6) !== "000000") accent = '#' + sysColor.substring(0, 6);
+
+        // 1. Determine if we are in Dark or Light mode
+        let isDark = true;
+        if (cfg.theme_mode === 'light') {
+            isDark = false;
+        } else if (cfg.theme_mode === 'system') {
+            isDark = nativeTheme.shouldUseDarkColors;
         }
-        let isDark = (cfg.theme_mode === 'light') ? false : true;
-        
-        mainWindow.webContents.insertCSS(getThemeCss(cfg, accent, isDark)).catch(e => {});
-        mainWindow.webContents.executeJavaScript(getThemeJs(accent)).catch(e => {});
+
+        if (!isDark) {
+            // ===============================================
+            // LIGHT MODE LOGIC
+            // ===============================================
+            
+            // 1. Change Title Bar to WHITE with BLACK buttons
+            try {
+                mainWindow.setTitleBarOverlay({
+                    color: '#ffffff',       // Background of title bar
+                    symbolColor: '#000000'  // Color of Min/Max/Close icons
+                });
+                mainWindow.setBackgroundColor('#ffffff'); // Prevents black flashes on resize
+            } catch(e) {}
+
+            // 2. Load light-mode.css
+            const lightCssPath = path.join(__dirname, 'light-mode.css');
+            fs.readFile(lightCssPath, 'utf8', (err, data) => {
+                if (err) {
+                    console.error("Failed to load light-mode.css:", err);
+                    return;
+                }
+                mainWindow.webContents.insertCSS(data).catch(e => console.error(e));
+            });
+
+        } else {
+            // ===============================================
+            // DARK / OLED MODE LOGIC
+            // ===============================================
+
+            // 1. Change Title Bar to BLACK with WHITE buttons
+            try {
+                mainWindow.setTitleBarOverlay({
+                    color: '#000000',       // Background of title bar
+                    symbolColor: '#ffffff'  // Color of Min/Max/Close icons
+                });
+                mainWindow.setBackgroundColor('#000000'); // Prevents white flashes
+            } catch(e) {}
+
+            // 2. Calculate Accent
+            let accent = cfg.text_color || "#ff0000";
+            if (cfg.sync_theme && process.platform === 'win32') {
+                let sysColor = systemPreferences.getAccentColor(); 
+                if (sysColor && sysColor.substring(0, 6) !== "000000") {
+                    accent = '#' + sysColor.substring(0, 6);
+                }
+            }
+
+            // 3. Inject Dynamic CSS
+            try {
+                const css = getThemeCss(cfg, accent, true);
+                mainWindow.webContents.insertCSS(css).catch(e => console.error(e));
+                mainWindow.webContents.executeJavaScript(getThemeJs(accent)).catch(e => {});
+            } catch (error) {
+                console.error("Theme Generation Error:", error);
+            }
+        }
     }
 
     function openLoginWindow(targetUrl) {
@@ -169,17 +225,8 @@ if (!gotTheLock) {
                 tooltip: 'Previous',
                 icon: getIcon('previous'),
                 click: () => {
-                    mainWindow.webContents.executeJavaScript(`
-                        (function(){
-                            var btn = document.querySelector('.ytp-prev-button');
-                            if (btn && btn.style.display !== 'none' && !btn.getAttribute('aria-disabled')) {
-                                btn.click();
-                            } else {
-                                var v = document.querySelector('video');
-                                if (v) v.currentTime = 0;
-                            }
-                        })()
-                    `);
+                    // FIXED: Click the UI button, not the hidden player button
+                    mainWindow.webContents.executeJavaScript("document.querySelector('.previous-button').click()");
                 },
                 flags: ['dismissonclick']
             },
@@ -187,14 +234,18 @@ if (!gotTheLock) {
                 tooltip: isPlaying ? 'Pause' : 'Play',
                 icon: isPlaying ? getIcon('pause') : getIcon('play'),
                 click: () => {
-                    mainWindow.webContents.executeJavaScript("document.querySelector('.ytp-play-button').click()");
+                    // FIXED: Click the main Play/Pause button
+                    mainWindow.webContents.executeJavaScript("document.querySelector('#play-pause-button').click()");
                 },
                 flags: ['dismissonclick']
             },
             {
                 tooltip: 'Next',
                 icon: getIcon('next'),
-                click: () => mainWindow.webContents.executeJavaScript("document.querySelector('.ytp-next-button').click()"),
+                click: () => {
+                    // FIXED: Click the UI button
+                    mainWindow.webContents.executeJavaScript("document.querySelector('.next-button').click()");
+                },
                 flags: ['dismissonclick']
             }
         ];
@@ -246,7 +297,7 @@ if (!gotTheLock) {
         event.preventDefault();
         mainWindow.destroy();
         });
-
+        
         mainWindow.webContents.session.webRequest.onHeadersReceived(
     { urls: ['*://*.googlevideo.com/*'] },
     (details, callback) => {
@@ -433,5 +484,25 @@ if (!gotTheLock) {
     ipcMain.handle('get-eq-settings', () => {
         // Return saved settings or a default "Flat" EQ
         return cfg.eq_settings || [0,0,0,0,0,0,0,0,0,0];
+    });
+    ipcMain.on('save-options', (event, newOptions) => {
+        // 1. Merge new options into existing config
+        cfg = { ...cfg, ...newOptions };
+        saveConfig(cfg);
+
+        // 2. Apply settings immediately where possible
+        if (mainWindow) {
+            mainWindow.setAlwaysOnTop(cfg.always_on_top || false);
+        }
+
+        // 3. Handle "Start on Boot" logic
+        app.setLoginItemSettings({ 
+            openAtLogin: cfg.start_on_boot || false, 
+            path: app.getPath('exe') 
+        });
+
+        // 4. Send success signal back (optional, allows window to close itself)
+        // usually the window closes itself after sending, so we don't strictly need to reply
+        console.log("Options saved:", newOptions);
     });
 }

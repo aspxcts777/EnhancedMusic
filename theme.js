@@ -269,6 +269,9 @@ ytmusic-guide-section-renderer {
    /* =========================
    1. OLED VARIABLES
    ========================= */
+/* =========================
+   1. OLED VARIABLES
+   ========================= */
 html, body, :root, ytmusic-app {
     --ytmusic-background: #000000 !important;
     --ytmusic-brand-background-solid: #000000 !important;

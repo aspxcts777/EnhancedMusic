@@ -4,7 +4,7 @@
     <title>Equalizer</title>
     <style>
         :root {
-            --bg-color: #000000;       /* OLED Black */
+            --bg-color: #000000;       /* Default OLED Black */
             --accent-color: #6B69D6;   /* Default Purple (will update dynamically) */
             --text-color: #ffffff;
             --text-secondary: #a0a0a0;
@@ -43,7 +43,7 @@
             gap: 10px;
         }
 
-        /* The triangle icon from the screenshot */
+        /* The Purple/Accent Triangle Icon */
         h2::before {
             content: '';
             display: inline-block;
@@ -70,9 +70,10 @@
             color: var(--text-color);
         }
 
-        /* --- Presets Row --- */
+        /* --- Presets Container --- */
         .presets {
             display: flex;
+            flex-wrap: wrap;
             gap: 8px;
             margin-bottom: 25px;
             padding-bottom: 20px;
@@ -80,33 +81,54 @@
             justify-content: center;
         }
 
-        .preset-btn {
+        /* --- Unified Button & Dropdown Style --- */
+        .preset-btn, select {
             background: transparent;
-            border: 1px solid var(--accent-color);
+            border: 1px solid var(--accent-color); /* Uses your Theme Color */
             color: var(--text-color);
             padding: 6px 14px;
-            border-radius: 20px; /* Rounded pill shape from screenshot */
+            border-radius: 20px; /* Rounded pill shape */
             cursor: pointer;
             font-size: 12px;
             font-weight: 600;
             transition: all 0.2s ease;
             outline: none;
-            min-width: 60px;
+            font-family: inherit;
         }
 
-        .preset-btn:hover {
+        .preset-btn:hover, select:hover {
             background: rgba(255, 255, 255, 0.1); 
         }
 
-        /* Active State */
+        /* Active State (Filled Button) */
         .preset-btn.active {
             background: var(--accent-color);
             border-color: var(--accent-color);
-            color: #ffffff; /* Text color on filled button */
+            color: #ffffff;
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
 
-        /* --- Sliders Area --- */
+        /* --- Custom Dropdown Styling --- */
+        select {
+            -webkit-appearance: none; /* Hides default ugly arrow */
+            appearance: none;
+            text-align: center;
+            padding-right: 28px; /* Space for custom arrow */
+            
+            /* Custom SVG Arrow that matches text color */
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ffffff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px top 50%;
+            background-size: 8px auto;
+        }
+
+        /* Dropdown Options (Must have background to be readable) */
+        select option {
+            background-color: var(--bg-color); /* Matches theme (Black or White) */
+            color: var(--text-color);
+        }
+
+        /* --- Sliders Layout --- */
         .sliders-container {
             display: flex;
             justify-content: space-between;
@@ -124,11 +146,11 @@
             position: relative;
         }
 
-        /* Vertical Range Input Styling */
+        /* Vertical Range Slider */
         input[type=range] {
             -webkit-appearance: none;
-            width: 180px; /* Length of the vertical slider */
-            height: 4px;  /* Thickness of the track */
+            width: 180px;
+            height: 4px;
             background: var(--slider-track);
             border-radius: 2px;
             transform: rotate(-90deg);
@@ -139,15 +161,14 @@
             cursor: pointer;
         }
 
-        /* The Thumb (Dot) */
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
             width: 14px; height: 14px;
-            background: #ffffff; /* White center */
+            background: #ffffff;
             border: none;
             border-radius: 50%;
-            box-shadow: 0 0 8px var(--accent-color); /* Glow effect */
-            margin-top: -5px; /* Center on track */
+            box-shadow: 0 0 8px var(--accent-color); /* Glow uses Accent Color */
+            margin-top: -5px;
             transition: transform 0.1s;
         }
 
@@ -155,7 +176,6 @@
             transform: scale(1.3);
         }
 
-        /* Labels */
         .value {
             position: absolute; top: -5px;
             font-size: 11px; font-weight: bold;
@@ -183,6 +203,22 @@
         <button class="preset-btn" onclick="setPreset('vocal', this)">Vocal</button>
         <button class="preset-btn" onclick="setPreset('treble', this)">Treble</button>
         <button class="preset-btn" onclick="setPreset('loudness', this)">Loudness</button>
+        
+        <select id="more-presets" onchange="handleDropdown(this)">
+            <option value="" disabled selected>More Presets</option>
+            <option value="flat">Flat / Default</option>
+            <option value="acoustic">Acoustic</option>
+            <option value="classical">Classical</option>
+            <option value="dance">Dance</option>
+            <option value="electronic">Electronic</option>
+            <option value="hiphop">Hip-Hop</option>
+            <option value="jazz">Jazz</option>
+            <option value="metal">Metal</option>
+            <option value="pop">Pop</option>
+            <option value="rock">Rock</option>
+            <option value="all-down">All Down</option>
+            <option value="all-up">All Up</option>
+        </select>
     </div>
 
     <div class="sliders-container" id="sliders"></div>
@@ -205,83 +241,127 @@
 
         const inputs = document.querySelectorAll('.slider');
         const presetButtons = document.querySelectorAll('.preset-btn');
+        const dropdown = document.getElementById('more-presets');
 
-        // 2. Fetch & Sync Accent Color
+        // =========================================================
+        // 2. THEME & ACCENT LOGIC (Important!)
+        // =========================================================
         function syncTheme() {
             try {
-                // Get main config synchronously
+                // Get main config from app.js
                 const cfg = ipcRenderer.sendSync('get-config');
                 
-                // Determine the correct color
+                // A. Apply Light/Dark Mode Backgrounds
+                // (Matches your Light Mode logic in app.js)
+                if (cfg.theme_mode === 'light') {
+                    document.documentElement.style.setProperty('--bg-color', '#ffffff');
+                    document.documentElement.style.setProperty('--text-color', '#000000');
+                    document.documentElement.style.setProperty('--slider-track', '#e0e0e0');
+                    
+                    // Update Dropdown Arrow for Light Mode (Black Arrow)
+                    const style = document.createElement('style');
+                    style.innerHTML = `select { background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000000%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E") !important; }`;
+                    document.head.appendChild(style);
+                }
+
+                // B. Sync Accent Color (Windows Sync or Manual)
                 if (cfg.sync_theme) {
-                    // If syncing with windows, ask main process for the system color
                     ipcRenderer.invoke('get-system-accent').then(sysColor => {
                         document.documentElement.style.setProperty('--accent-color', sysColor);
                     });
                 } else {
-                    // Otherwise use the manual color from appearance settings
                     const manualColor = cfg.text_color || '#6B69D6';
                     document.documentElement.style.setProperty('--accent-color', manualColor);
                 }
-            } catch (e) {
-                console.error("Theme Sync Error:", e);
-            }
+            } catch (e) { console.error("Theme Sync Error:", e); }
         }
         
-        // Run once on load
+        // Run immediately
         syncTheme();
 
-        // 3. Update Audio Engine
+        // =========================================================
+        // 3. LOGIC
+        // =========================================================
+
         function updateEQ() {
             const gains = Array.from(inputs).map(input => parseFloat(input.value));
             ipcRenderer.send('eq-update', gains);
         }
 
-        // 4. Slider Interaction
+        // Slider Listeners
         inputs.forEach(input => {
             input.addEventListener('input', (e) => {
                 const val = e.target.value;
                 const displayVal = val > 0 ? `+${val}` : val;
                 document.getElementById(`val-${e.target.dataset.index}`).innerText = displayVal;
                 
-                // If user moves a slider, no preset is active anymore
+                // Clear presets UI when manually adjusting
                 presetButtons.forEach(btn => btn.classList.remove('active'));
+                dropdown.value = ""; 
                 
                 updateEQ();
             });
         });
 
-        // 5. Reset Button
+        // Reset Listener
         document.getElementById('reset').addEventListener('click', () => {
-            inputs.forEach((input, i) => {
-                input.value = 0;
-                document.getElementById(`val-${i}`).innerText = "0";
-            });
-            presetButtons.forEach(btn => btn.classList.remove('active'));
-            updateEQ();
+            setPreset('flat', null);
+            dropdown.value = ""; 
         });
 
-        // 6. Preset Logic (Including Loudness)
-        window.setPreset = (type, btnElement) => {
-            let values = [];
+        // Dropdown Handler
+        window.handleDropdown = (ele) => {
+            if(ele.value) {
+                setPreset(ele.value, null); // Apply Preset
+                ele.blur(); // Remove focus so it looks clean
+                // We keep the value selected so user knows what is active
+            }
+        }
 
+        // =========================================================
+        // 4. PRESET VALUES
+        // =========================================================
+        window.setPreset = (type, btnElement) => {
+            let values = [0,0,0,0,0,0,0,0,0,0];
+
+            // --- Main Buttons ---
             if (type === 'bass') values = [8, 6, 4, 2, 0, 0, 0, 0, 0, 0];
             if (type === 'vocal') values = [-2, -2, -1, 1, 4, 5, 4, 2, 0, 0];
             if (type === 'treble') values = [0, 0, 0, 0, 0, 2, 4, 6, 8, 8];
-            if (type === 'loudness') values = [12, 10, 6, 4, 2, 2, 4, 6, 10, 12];
+            if (type === 'loudness') values = [12, 10, 4, 2, 0, 0, 2, 4, 10, 12];
 
+            // --- Dropdown List ---
+            if (type === 'acoustic') values = [3, 2, 1, 1, 1, 2, 3, 3, 2, 1];
+            if (type === 'classical') values = [5, 4, 3, 2, -1, -1, 0, 2, 4, 5];
+            if (type === 'dance') values = [7, 6, 3, 0, 0, -2, -2, 0, 4, 6];
+            if (type === 'electronic') values = [6, 5, 1, 0, -2, 2, 1, 2, 5, 7];
+            if (type === 'hiphop') values = [7, 6, 2, 1, -1, -1, 1, 2, 3, 4];
+            if (type === 'jazz') values = [4, 3, 1, 2, -1, -1, 0, 1, 3, 5];
+            if (type === 'metal') values = [6, 5, 1, -2, -3, 0, 3, 6, 8, 9];
+            if (type === 'pop') values = [4, 3, 2, 0, -1, -1, 0, 2, 4, 5];
+            if (type === 'rock') values = [7, 5, 3, 1, -1, -1, 2, 4, 6, 7];
+            if (type === 'flat') values = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+            if (type === 'all-down') values = [-12,-12,-12,-12,-12,-12,-12,-12,-12,-12];
+            if (type === 'all-up') values = [12,12,12,12,12,12,12,12,12,12];
+
+            // Apply values to sliders
             inputs.forEach((input, i) => {
                 input.value = values[i];
                 const displayVal = values[i] > 0 ? `+${values[i]}` : values[i];
                 document.getElementById(`val-${i}`).innerText = displayVal;
             });
 
+            // Handle Button Active State
             presetButtons.forEach(b => b.classList.remove('active'));
             if(btnElement) btnElement.classList.add('active');
+
+            // If a button was clicked, reset dropdown text
+            if(btnElement) dropdown.value = "";
 
             updateEQ();
         }
 
+        // 5. Load Saved Settings
         ipcRenderer.invoke('get-eq-settings').then(gains => {
             if (gains && gains.length) {
                 inputs.forEach((input, i) => {
