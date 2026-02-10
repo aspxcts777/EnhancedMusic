@@ -77,8 +77,16 @@ if (!gotTheLock) {
 
     function loadDeepLink(deepLink) {
         let targetUrl = deepLink.replace('enhancedmusic://', 'https://');
+        targetUrl = targetUrl.replace('https://www.', 'https://music.');
         targetUrl = targetUrl.replace(/([^:]\/)\/+/g, "$1");
-        if (targetUrl.includes('music.youtube.com')) mainWindow.loadURL(targetUrl);
+        if (targetUrl.includes('youtu.be')) {
+            const id = targetUrl.split('youtu.be/')[1];
+            targetUrl = `https://music.youtube.com/watch?v=${id}`;
+        }
+
+        if (targetUrl.includes('music.youtube.com')) {
+            mainWindow.loadURL(targetUrl);
+        }
     }
 
     //UPDATE CHECKER
@@ -293,6 +301,7 @@ if (!gotTheLock) {
             webPreferences: { nodeIntegration: false, contextIsolation: true ,preload: path.join(__dirname, 'preload.js')},
             alwaysOnTop: cfg.always_on_top || false,
         });
+        mainWindow.webContents.openDevTools();
         mainWindow.on('close', (event) => {
         event.preventDefault();
         mainWindow.destroy();
