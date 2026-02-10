@@ -16,9 +16,7 @@
 - 🧩 Lightweight and easy to use
 
 ## 🐞 Known Bugs
-
-- 🎨 Light Theme option does nothing: I had reused assets from <a style="color: #ea00ff; text-decoration: underline;" href="https://aspxcts777.github.io/enhanced/tube.html" target="_blank">EnhancedTube</a> which caused these leftovers to be passed on, but don't worry we are working on a Light Theme.
-- ✨ Advanced Options broke: While removing extra options IPC was left untouched, this lead to panic and hence settings is broken, will be fixed in 1.1.2 or 1.1.2-BETA
+- None yet, if you find any start a new issue!
 
 ## 🚀 Website
 
