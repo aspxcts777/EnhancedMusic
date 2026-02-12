@@ -266,9 +266,6 @@ ytmusic-guide-section-renderer {
 
     // --- MODE 2: OLED (Pure Black) ---
     return `
-   /* =========================
-   1. OLED VARIABLES
-   ========================= */
 /* =========================
    1. OLED VARIABLES
    ========================= */
