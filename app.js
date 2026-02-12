@@ -301,7 +301,6 @@ if (!gotTheLock) {
             webPreferences: { nodeIntegration: false, contextIsolation: true ,preload: path.join(__dirname, 'preload.js')},
             alwaysOnTop: cfg.always_on_top || false,
         });
-        mainWindow.webContents.openDevTools();
         mainWindow.on('close', (event) => {
         event.preventDefault();
         mainWindow.destroy();
@@ -311,9 +310,6 @@ if (!gotTheLock) {
     { urls: ['*://*.googlevideo.com/*'] },
     (details, callback) => {
         const responseHeaders = Object.assign({}, details.responseHeaders);
-
-        // 1. REMOVE existing CORS headers to prevent conflicts
-        // (Google sends its own, we must delete them to replace them)
         const keysToRemove = [
             'access-control-allow-origin',
             'access-control-allow-credentials',
@@ -327,12 +323,9 @@ if (!gotTheLock) {
             }
         });
 
-        // 2. SET the correct headers for Authenticated Requests
-        // We MUST match the origin exactly. Wildcard '*' is illegal here.
+
         responseHeaders['Access-Control-Allow-Origin'] = ['https://music.youtube.com'];
         responseHeaders['Access-Control-Allow-Credentials'] = ['true'];
-        
-        // Optional: Allow common headers just in case
         responseHeaders['Access-Control-Allow-Headers'] = ['*'];
         responseHeaders['Access-Control-Allow-Methods'] = ['GET, HEAD, POST, OPTIONS'];
 
