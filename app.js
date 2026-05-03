@@ -1,4 +1,4 @@
-
+//1.1.3
 const { app, BrowserWindow, Menu, ipcMain, shell, systemPreferences, nativeTheme, nativeImage, session, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
