@@ -287,7 +287,7 @@ if (!gotTheLock) {
 
 
         mainWindow = new BrowserWindow({
-            width: 1280, height: 720, title: "EnhancedTube", show: false,
+            width: 1280, height: 720, title: "EnhancedMusic", show: false,
             backgroundColor: cfg.oled ? '#000000' : '#0f0f0f',
             frame: true,
             icon: path.join(__dirname, 'icon.ico'),
@@ -373,7 +373,7 @@ if (!gotTheLock) {
             return { action: 'allow' };
         });
 
-        mainWindow.webContents.on('did-finish-load', () => { injectTheme(); updateThumbar(); });
+        mainWindow.webContents.on('dom-ready', () => { injectTheme(); updateThumbar(); });
 
         setInterval(async () => {
             if (!mainWindow || mainWindow.isDestroyed()) return;
